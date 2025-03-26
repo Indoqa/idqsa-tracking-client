@@ -1,0 +1,682 @@
+# Licensed to the Indoqa Software Design und Beratung GmbH (Indoqa) under
+# one or more contributor license agreements. See the NOTICE file distributed
+# with this work for additional information regarding copyright ownership.
+# Indoqa licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License. You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+openapi: 3.0.2
+
+info:
+  title: Tracking
+  version: 1.3.3
+
+servers:
+  - url: /
+    description: Local
+
+tags:
+  - name: Tracking
+
+paths:
+  /t:
+    post:
+      summary: Track signals
+      operationId: postTrackingInput
+      tags: [ Tracking ]
+      parameters:
+        - in: header
+          name: 'User-Agent'
+          schema:
+            type: string
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              type: string
+      responses:
+        202:
+          description: The tracking input was accepted
+
+
+  /i:
+    post:
+      summary: Retrieve identifiers
+      operationId: postForIdentifiers
+      tags: [ Tracking ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Identifiers'
+      responses:
+        200:
+          description: The tabId, sessionId, deviceId
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Identifiers'
+
+components:
+  schemas:
+    TrackingInput:
+      required:
+        - idqsaId
+        - signals
+      properties:
+        idqsaId:
+          type: string
+        userId:
+          type: string
+          description: The ID of the user which caused this Signal.
+        deviceId:
+          type: string
+          description: The ID of the user which caused this Signal.
+        sessionId:
+          type: string
+          description: The ID of the session in which this Signal was caused.
+        tabId:
+          type: string
+          description: The ID of the tab (or other sub section) of the application in which this Signal was caused. Optional.
+        val:
+          description: The validation code
+          type: string
+        displayHeight:
+          type: integer
+          format: int32
+        displayWidth:
+          type: integer
+          format: int32
+        location:
+          $ref: '#/components/schemas/ClientLocation'
+        language:
+          type: string
+          description: The language the end user uses to interact with the search engine UI.
+        clientVersion:
+          type: string
+          description: The version of the client producing the signal.
+        signals:
+          type: array
+          items:
+            $ref: '#/components/schemas/Signal'
+
+
+    Signal:
+      properties:
+        type:
+          type: string
+          description: The type of the Signal.
+        timestamp:
+          type: string
+          format: date-time
+          description: The timestamp of the Signal. UTC is expected.
+      discriminator:
+        propertyName: type
+        mapping:
+          SEARCH: '#/components/schemas/SearchSignal'
+          SELECT: '#/components/schemas/SelectSignal'
+          READ: '#/components/schemas/ReadSignal'
+          CART: '#/components/schemas/CartSignal'
+          BUY: '#/components/schemas/BuySignal'
+
+
+    SearchSignal:
+      allOf:
+        - $ref: '#/components/schemas/Signal'
+        - properties:
+            searchId:
+              type: string
+              description: The unique ID for this search.
+            previousSearchId:
+              type: string
+              description: The unique ID of the previous search. Optional.
+            userInput:
+              type: string
+              description: The original user input for this search.
+            actor:
+              type: string
+              description: The actor causing the signal. If the value is missing, it is assumed that it is a human actor.
+              enum: [ SYSTEM ]
+            queryTime:
+              type: integer
+              format: int64
+              description: The time required for executing the search in milliseconds
+            queryTimeDetails:
+              type: array
+              items:
+                $ref: '#/components/schemas/TimeDetail'
+              description: Optional details how the query time was spent
+            queryDetails:
+              type: array
+              items:
+                $ref: '#/components/schemas/QueryDetail'
+              description: Optional details about the query.
+            queries:
+              type: array
+              items:
+                type: string
+              description: The actual queries used for generating the search result.
+            result:
+              $ref: '#/components/schemas/Result'
+            alternativeResults:
+              type: array
+              items:
+                $ref: '#/components/schemas/Result'
+            filters:
+              items:
+                $ref: '#/components/schemas/Filter'
+            intents:
+              type: array
+              items:
+                $ref: '#/components/schemas/Intent'
+            entropy:
+              type: number
+              format: float
+              description: Is it a specific or a broad query? The lower the value, the more specific. (value from 0 to 1)
+            appVersion:
+              type: string
+              description: The version of the search application.
+            dataVersion:
+              type: integer
+              format: int64
+              description: The version of the data in the search application.
+            searchSignalsOnly:
+              type: boolean
+              description: True if the search session is expected to produce only SEARCH events, e.g. the end user has turned off tracking in the client.
+
+    SelectSignal:
+      allOf:
+        - $ref: '#/components/schemas/Signal'
+        - properties:
+            searchId:
+              type: string
+              description: The ID of the search from which the result was selected.
+            resultId:
+              type: string
+              description: The ID of the result that was selected.
+            autoCompletePosition:
+              type: integer
+              format: int32
+              description: The position of the selected auto-complete item in the prediction result.
+
+
+    CartSignal:
+      allOf:
+        - $ref: '#/components/schemas/Signal'
+        - properties:
+            searchId:
+              type: string
+              description: The ID of the search from which the result was selected.
+            resultId:
+              type: string
+              description: The ID of the result that was selected.
+
+
+    BuySignal:
+      allOf:
+        - $ref: '#/components/schemas/Signal'
+        - properties:
+            resultIds:
+              type: array
+              items:
+                type: string
+              description: The IDs of the search items which have been bought.
+
+
+    ReadSignal:
+      allOf:
+        - $ref: '#/components/schemas/Signal'
+        - properties:
+            start:
+              type: string
+              format: date-time
+              description: The timestamp when the user started to read. UTC is expected.
+            resultId:
+              type: string
+              description: The ID of the result that was read.
+            threadId:
+              type: string
+              description: The ID of an ongoing reading thread.
+            url:
+              type: string
+              description: The URL of the result.
+            referrer:
+              type: string
+              description: The referrer of the result, usually a URL.
+            words:
+              type: integer
+              format: int32
+              description: The number of (relevant) words on the result item.
+            duration:
+              type: integer
+              format: int32
+              description: The time in seconds spent with the result item.
+            height:
+              type: integer
+              format: int32
+              description: The height of the result item in the user interface.
+            scrollTopMin:
+              type: integer
+              format: int32
+              description: The minimum scrollTop position.
+            scrollBottomMax:
+              type: integer
+              format: int32
+              description: The maximum scrollBottom position.
+
+
+    Result:
+      properties:
+        type:
+          type: string
+          description: The type of the result.
+        variant:
+          type: string
+          description: The variant of the Signal. Use this for A/B testing.
+      discriminator:
+        propertyName: type
+        mapping:
+          SEARCH_RESULT: '#/components/schemas/SearchResult'
+          PREDICTION_RESULT: '#/components/schemas/PredictionResult'
+
+
+    SearchResult:
+      allOf:
+        - $ref: '#/components/schemas/Result'
+        - required:
+            - resultItems
+          properties:
+            resultItems:
+              type: array
+              items:
+                $ref: '#/components/schemas/ResultItem'
+            facets:
+              items:
+                $ref: '#/components/schemas/Facet'
+            cards:
+              items:
+                $ref: '#/components/schemas/Card'
+            paging:
+              $ref: '#/components/schemas/Paging'
+            sorting:
+              type: array
+              items:
+                $ref: '#/components/schemas/Sorting'
+            userInputSuggestions:
+              type: array
+              items:
+                $ref: '#/components/schemas/UserInputSuggestion'
+            filterSuggestions:
+              type: array
+              items:
+                $ref: '#/components/schemas/FilterSuggestion'
+
+
+    ResultItem:
+      allOf:
+        - $ref: '#/components/schemas/Prediction'
+        - required:
+            - id
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+              description: The document name as shown to the user.
+            link:
+              type: string
+              description: The link to the documentation, ideally accessible from the browser.
+            language:
+              type: string
+              description: The language of the result item content.
+            contentType:
+              type: string
+              description: The
+            classifications:
+              type: array
+              description: Assign a result item to a strictly hierarchical tree of classes, e.g. ECLASS (classes are mutually-exclusive, non-overlapping with fixed boundaries)
+              items:
+                $ref: '#/components/schemas/ResultItemClassification'
+            tags:
+              type: array
+              description: Assign a result item to one or more tags hierarchies.
+              items:
+                $ref: '#/components/schemas/ResultItemTag'
+            representation:
+              type: array
+              description: In what way is the result item presented to the user.
+              items:
+                type: string
+                enum: [ IMAGE, AD, LOCATION_PIN, TEXT ]
+            collapsed:
+              type: boolean
+              description: Is the item initially collapsed?
+            explained:
+              type: boolean
+              description: Is the item explained? (e.g. highlights)
+            subitems:
+              type: array
+              items:
+                $ref: '#/components/schemas/ResultItem'
+
+
+    Paging:
+      required:
+        - type
+      properties:
+        total:
+          type: integer
+          format: int64
+          description: The total count of results.
+        type:
+          type: string
+          enum: [ INFINITE, WINDOW ]
+          description: The way how paging works.
+        start:
+          type: integer
+          format: int32
+          description: The offset of the first element
+        requested:
+          type: integer
+          format: int32
+          description: The number of requested elements
+
+
+    Sorting:
+      required:
+        - order
+        - property
+      properties:
+        property:
+          type: string
+          description: The name of the property to be used for sorting
+        order:
+          type: string
+          enum: [ ASC, DESC ]
+          description: The order in which to sort
+        explicit:
+          type: boolean
+          description: Is the filter explicitly set by the user?
+
+
+    Facet:
+      required:
+        - name
+        - values
+      properties:
+        name:
+          type: string
+        values:
+          type: array
+          items:
+            $ref: '#/components/schemas/FacetValue'
+
+
+    FacetValue:
+      required:
+        - id
+        - count
+      properties:
+        id:
+          type: string
+          description: The ID or internal value of the facet value.
+        name:
+          type: string
+          description: The display name for ID or internal value of the facet value.
+        count:
+          type: integer
+          format: int64
+
+
+    Filter:
+      required:
+        - name
+        - values
+      properties:
+        name:
+          type: string
+        values:
+          type: array
+          items:
+            type: string
+        explicit:
+          type: boolean
+          description: Is the filter explicitly set by the user?
+
+
+    Card:
+      required:
+        - item
+        - position
+      properties:
+        item:
+          $ref: '#/components/schemas/ResultItem'
+        position:
+          type: string
+          enum: [ TOP, RIGHT, BOTTOM, LEFT, INLINE ]
+
+
+    Intent:
+      required:
+        - values
+      properties:
+        values:
+          type: array
+          items:
+            type: string
+        reference:
+          type: string
+          description: The text that is responsible for the detection of the intent.
+        detector:
+          type: string
+          description: The name and the version of the detector.
+
+
+    ResultItemClassification:
+      required:
+        - id
+      properties:
+        id:
+          type: string
+          description: The ID or internal value of the classification.
+        name:
+          type: string
+          description: The display name for ID or internal value of the classification.
+
+
+    ResultItemTag:
+      required:
+        - type
+        - id
+      properties:
+        type:
+          type: string
+          description: The type of the tag.
+        id:
+          type: string
+          description: The ID or internal value of the tag.
+        name:
+          type: string
+          description: The display name for ID or internal value of the tag.
+
+
+    ClientLocation:
+      properties:
+        longitude:
+          description: The longitude
+          type: number
+          format: double
+        latitude:
+          description: The latitude
+          type: number
+          format: double
+        accuracy:
+          description: The accuracy
+          type: number
+          format: double
+
+
+    UserInputSuggestion:
+      required:
+        - userInput
+      properties:
+        userInput:
+          type: string
+        applied:
+          type: boolean
+        hidden:
+          type: boolean
+
+
+    FilterSuggestion:
+      required:
+        - filter
+      properties:
+        filter:
+          $ref: '#/components/schemas/Filter'
+        applied:
+          type: boolean
+        hidden:
+          type: boolean
+
+
+    PredictionResult:
+      allOf:
+        - $ref: '#/components/schemas/Result'
+        - required:
+            - predictions
+          properties:
+            predictions:
+              type: array
+              items:
+                $ref: '#/components/schemas/Prediction'
+
+
+    Prediction:
+      properties:
+        type:
+          type: string
+          description: The type of the prediction.
+      discriminator:
+        propertyName: type
+        mapping:
+          RESULT_ITEM: '#/components/schemas/ResultItem'
+          AUTO_COMPLETE_ITEM: '#/components/schemas/AutoCompleteItem'
+
+
+    AutoCompleteItem:
+      allOf:
+        - $ref: '#/components/schemas/Prediction'
+        - required:
+            - predictionValues
+          properties:
+            predictionValues:
+              type: array
+              items:
+                $ref: '#/components/schemas/AutoCompletePart'
+            language:
+              type: string
+              description: The language of the result item content.
+
+
+    AutoCompletePart:
+      required:
+        - text
+        - type
+      properties:
+        text:
+          type: string
+          description: The presented text.
+        type:
+          type: string
+          enum: [ USER_INPUT, PREDICTION ]
+          description: Is the text a user input or a prediction?
+
+
+    Identifiers:
+      required:
+        - sessionId
+        - deviceId
+        - tabId
+      properties:
+        sessionId:
+          description: The session identifier
+          type: string
+        tabId:
+          description: The tab identifier
+          type: string
+        deviceId:
+          description: The device identifier
+          type: string
+        val:
+          description: The validation code
+          type: string
+        active:
+          description: Is the device active?
+          type: boolean
+
+
+    TimeDetail:
+      required:
+        - key
+        - duration
+      properties:
+        key:
+          description: The key of this time detail.
+          type: string
+        duration:
+          description: The duration for this time detail in milliseconds.
+          type: integer
+          format: int64
+        parent:
+          description: An optional parent key for representing nested time details.
+          type: string
+
+
+    QueryDetail:
+      required:
+        - key
+        - duration
+      properties:
+        key:
+          description: The key of this time detail.
+          type: string
+        duration:
+          description: The duration for this detail in milliseconds.
+          type: integer
+          format: int64
+        timestamp:
+          description: The timestamp when this detail was completed. UTC is expected.
+          type: string
+          format: date-time
+        description:
+          description: The description of this detail.
+          type: string
+        parent:
+          description: An optional parent key for representing nested details.
+          type: string
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueryDetailsTag'
+
+
+    QueryDetailsTag:
+      required:
+        - name
+        - value
+      properties:
+        name:
+          description: The name of the tag.
+          type: string
+        value:
+          description: The value of the tag.
+          type: object

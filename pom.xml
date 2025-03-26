@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Licensed to the Indoqa Software Design und Beratung GmbH (Indoqa) under
+  one or more contributor license agreements. See the NOTICE file distributed
+  with this work for additional information regarding copyright ownership.
+  Indoqa licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License. You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <packaging>jar</packaging>
+
+  <parent>
+    <groupId>com.indoqa</groupId>
+    <artifactId>indoqa-oss-parent</artifactId>
+    <version>16</version>
+  </parent>
+
+  <artifactId>idqsa-tracking-client</artifactId>
+  <version>0.9.4-SNAPSHOT</version>
+
+  <name>IDQSA Tracking Client</name>
+
+  <properties>
+    <project.build.compiler.version>11</project.build.compiler.version>
+    <forbiddenapis.skip>true</forbiddenapis.skip>
+  </properties>
+
+  <scm>
+    <connection>scm:git:git@github.com:Indoqa/idqsa-tracking-client.git</connection>
+    <developerConnection>scm:git:git@github.com:Indoqa/idqsa-tracking-client.git</developerConnection>
+    <url>https://github.com/Indoqa/idqsa-tracking-client</url>
+    <tag>idqsa-tracking-client-0.9.3</tag>
+  </scm>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>2.14.0</version>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.datatype</groupId>
+      <artifactId>jackson-datatype-jsr310</artifactId>
+      <version>2.14.0</version>
+      <optional>true</optional>
+    </dependency>
+
+    <!-- Annotations -->
+    <dependency>
+      <groupId>com.google.code.findbugs</groupId>
+      <artifactId>jsr305</artifactId>
+      <version>3.0.2</version>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-annotations</artifactId>
+      <version>2.14.0</version>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.openapitools</groupId>
+      <artifactId>jackson-databind-nullable</artifactId>
+      <version>0.2.6</version>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>io.swagger</groupId>
+      <artifactId>swagger-annotations</artifactId>
+      <version>1.6.10</version>
+      <optional>true</optional>
+    </dependency>
+
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>2.0.16</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>add-source</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>${project.build.directory}/generated-sources/openapi/src/gen/java</source>
+              </sources>
+            </configuration>
+          </execution>
+          <execution>
+            <id>add-resource</id>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>add-resource</goal>
+            </goals>
+            <configuration>
+              <resources>
+                <resource>
+                  <directory>${project.license.rootDir}</directory>
+                  <targetPath>./</targetPath>
+                  <includes>
+                    <include>LICENSE</include>
+                    <include>NOTICE</include>
+                  </includes>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.openapitools</groupId>
+        <artifactId>openapi-generator-maven-plugin</artifactId>
+        <version>6.0.1</version>
+        <executions>
+          <execution>
+            <id>generated-signals-client</id>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+            <configuration>
+              <inputSpec>${project.basedir}/api/tracking-api.yaml</inputSpec>
+              <generatorName>java</generatorName>
+              <generateSupportingFiles>true</generateSupportingFiles>
+              <apiPackage>com.indoqa.idqsa.openapi.api</apiPackage>
+              <modelPackage>com.indoqa.idqsa.openapi.model</modelPackage>
+              <packageName>com.indoqa.idqsa.openapi</packageName>
+              <configOptions>
+                <sourceFolder>src/gen/java</sourceFolder>
+                <java8>true</java8>
+                <dateLibrary>java8</dateLibrary>
+                <skipDefaultInterface>true</skipDefaultInterface>
+                <interfaceOnly>true</interfaceOnly>
+                <useTags>true</useTags>
+                <library>native</library>
+              </configOptions>
+              <generateModelTests>false</generateModelTests>
+              <generateApiTests>false</generateApiTests>
+              <typeMappings>
+                <typeMapping>OffsetDateTime=Instant</typeMapping>
+              </typeMappings>
+              <importMappings>
+                <importMapping>java.time.OffsetDateTime=java.time.Instant</importMapping>
+              </importMappings>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>3.4.1</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <shadeTestJar>false</shadeTestJar>
+          <createSourcesJar>false</createSourcesJar>
+          <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
+          <shadeSourcesContent>true</shadeSourcesContent>
+          <artifactSet>
+            <excludes>
+              <exclude>org.slf4j:slf4j-api</exclude>
+            </excludes>
+          </artifactSet>
+          <relocations>
+            <relocation>
+              <pattern>com.fasterxml.jackson</pattern>
+              <shadedPattern>com.indoqa.idqsa.shaded.jackson</shadedPattern>
+            </relocation>
+            <relocation>
+              <pattern>io.swagger</pattern>
+              <shadedPattern>com.indoqa.idqsa.shaded.swagger</shadedPattern>
+            </relocation>
+            <relocation>
+              <pattern>org.openapitools</pattern>
+              <shadedPattern>com.indoqa.idqsa.shaded.openapitools</shadedPattern>
+            </relocation>
+            <relocation>
+              <pattern>javax.annotation</pattern>
+              <shadedPattern>com.indoqa.idqsa.shaded.annotations</shadedPattern>
+            </relocation>
+          </relocations>
+          <filters>
+            <filter>
+              <artifact>*:*</artifact>
+              <excludes>
+                <exclude>META-INF/maven/**</exclude>
+                <exclude>META-INF/*</exclude>
+              </excludes>
+            </filter>
+          </filters>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>io.github.git-commit-id</groupId>
+        <artifactId>git-commit-id-maven-plugin</artifactId>
+        <version>9.0.1</version>
+        <executions>
+          <execution>
+            <id>get-the-git-infos</id>
+            <goals>
+              <goal>revision</goal>
+            </goals>
+            <phase>initialize</phase>
+          </execution>
+        </executions>
+        <configuration>
+          <generateGitPropertiesFile>true</generateGitPropertiesFile>
+          <generateGitPropertiesFilename>${project.build.outputDirectory}/idqsa-git.properties</generateGitPropertiesFilename>
+          <includeOnlyProperties>
+            <includeOnlyProperty>^git.build.(time|version)$</includeOnlyProperty>
+            <includeOnlyProperty>^git.commit.id.(abbrev|full)$</includeOnlyProperty>
+          </includeOnlyProperties>
+          <commitIdGenerationMode>full</commitIdGenerationMode>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>

@@ -1,0 +1,15 @@
+Indoqa IDQSA Java Client
+Copyright 2025 Indoqa Software Design und Beratung GmbH
+
+This product includes software developed at
+Indoqa Software Design und Beratung GmbH (https://www.indoqa.com/).
+
+This product includes software developed at
+- The Apache Software Foundation (https://www.apache.org/).
+- FasterXML Jackson (https://github.com/FasterXML/jackson)
+- Google Code FindBugs (JSR-305) (https://findbugs.sourceforge.net/)
+- OpenAPI (https://github.com/openapi-tools)
+- Swagger (https://github.com/swagger-api)
+- SLF4J (http://www.slf4j.org/)
+
+
