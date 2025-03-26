@@ -26,7 +26,7 @@
   </parent>
 
   <artifactId>idqsa-tracking-client</artifactId>
-  <version>0.9.4</version>
+  <version>0.9.5-SNAPSHOT</version>
 
   <name>IDQSA Tracking Client</name>
 
@@ -39,7 +39,7 @@
     <connection>scm:git:git@github.com:Indoqa/idqsa-tracking-client.git</connection>
     <developerConnection>scm:git:git@github.com:Indoqa/idqsa-tracking-client.git</developerConnection>
     <url>https://github.com/Indoqa/idqsa-tracking-client</url>
-    <tag>idqsa-tracking-client-0.9.4</tag>
+    <tag>idqsa-tracking-client-0.9.3</tag>
   </scm>
 
   <dependencies>
